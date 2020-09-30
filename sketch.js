@@ -18,12 +18,15 @@ let landingX = 600,
 
 let games = [];
 let reachedTarget = false;
-let populationSize = 1000;
+let populationSize = 500;
 let turns = 0;
-let mutationRate = 0.1;
+let mutationRate = 0.01;
 let bestGame = 0;
 let stopEver = false;
 let gens = 0;
+
+let testingRocket = new Rocket(400, 400, 30);
+
 
 function setup() {
 	frameRate(60);
@@ -39,9 +42,11 @@ function setup() {
 
 function draw() {
 	if (!reachedTarget && !stopEver) {
-		ellipse(15, 15, 15, 15);
-		simulatePopulation();
-		createNewPopn();
+		for (let i = 0; i < 30; i++) {
+			ellipse(15, 15, 15, 15);
+			simulatePopulation();
+			createNewPopn();
+		}
 	}
 	if (stopEver) {
 		background(0);

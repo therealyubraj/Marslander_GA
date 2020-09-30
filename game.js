@@ -20,9 +20,16 @@ class Game {
         let firstForce = Math.floor(Math.random() * thrustRange);
         let firstAngle = Math.floor(Math.random() * 180) - 90;
         this.movesToDo.push([firstAngle, firstForce]);
+        let lastThurstChange = 5;
         for (let i = 1; i < this.fuel; i++) {
-            let curForce = this.movesToDo[i - 1][1] + Math.floor(Math.random() * 2) - 1;
-            let curAngle = this.movesToDo[i - 1][1] + Math.floor(Math.random() * 3) - 1.5;
+            let curForce = this.movesToDo[i - 1][1];
+            if (lastThurstChange == 0) {
+                let toChange = Math.floor(Math.random() * 3) - 1;
+                //console.error(toChange);
+                curForce += toChange;
+                lastThurstChange = 6;
+            }
+            let curAngle = this.movesToDo[i - 1][1] + Math.floor(Math.random() * 30) - 15;
 
             if (curForce > 4) {
                 curForce = 4;
@@ -36,7 +43,9 @@ class Game {
                 curAngle = -90;
             }
 
-            this.movesToDo.push([curAngle, curForce]);
+
+            this.movesToDo.push([0, curForce]);
+            lastThurstChange--;
         }
     }
 
@@ -63,7 +72,7 @@ class Game {
     }
 
     simulateTillEnd() {
-        while (!this.dead && !this.reachedLanding) {
+        while (!this.dead && !this.reachedLanding && this.turns < this.movesToDo.length) {
             let deathVar = this.checkDeath();
             let angle = this.movesToDo[this.turns][0];
             let force = this.movesToDo[this.turns][1];
@@ -75,33 +84,33 @@ class Game {
             } else if (deathVar == 'HEHE') {
                 this.reachedLanding = true;
                 reachedTarget = true;
-                this.score += 100;
+                this.score += 100000;
             } else {
                 this.dead = true;
-                //console.error(":SOB:")
-                //this.score -= 50;
+                this.score -= 200;
             }
             this.turns++;
         }
     }
 
     mutate(MR) {
-        for (let i = 0; i < this.movesToDo.length; i++) {
-            if (Math.random() < MR) {
-                let curForce = this.movesToDo[i][1] + Math.floor(Math.random() * 4) - 2;
-                let curAngle = this.movesToDo[i][0] + Math.floor(Math.random() * 10) - 5;
-                if (curForce > 4) {
-                    curForce = 4;
-                } else if (curForce < 0) {
-                    curForce = 0;
-                }
+        if (Math.random() < MR) {
+            let randInd = Math.max(0, Math.floor(Math.random() * this.movesToDo.length) - 6);
+            let curForce = this.movesToDo[randInd][1] + Math.floor(Math.random() * 3) - 1;
+            let curAngle = this.movesToDo[randInd][0] + Math.floor(Math.random() * 10) - 5;
+            if (curForce > 4) {
+                curForce = 4;
+            } else if (curForce < 0) {
+                curForce = 0;
+            }
 
-                if (curAngle > 90) {
-                    curAngle = 90;
-                } else if (curAngle < -90) {
-                    curAngle = -90;
-                }
-                this.movesToDo[i][0] = curAngle;
+            if (curAngle > 90) {
+                curAngle = 90;
+            } else if (curAngle < -90) {
+                curAngle = -90;
+            }
+            for (let i = randInd; i < randInd + 5; i++) {
+                this.movesToDo[i][0] = 0;
                 this.movesToDo[i][1] = curForce;
             }
         }

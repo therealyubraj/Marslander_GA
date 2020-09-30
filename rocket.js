@@ -53,7 +53,8 @@ class Rocket {
     } else if (this.dir < -90) {
       this.dir = -90;
     }
-    this.thurst.x = thurstToApply * this.thurstPower * Math.sin(this.dir * Math.PI / 180);
-    this.thurst.y = -thurstToApply * this.thurstPower * Math.cos(this.dir * Math.PI / 180);
+
+    this.thurst.y = -scaleFac * cos(this.dir) * thurstToApply;
+    this.thurst.x = scaleFac * sin(this.dir) * thurstToApply;
   }
 }

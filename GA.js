@@ -9,16 +9,9 @@ function createNewPopn() {
     let newGames = [];
     for (let i = 0; i < games.length; i++) {
         let tmp1 = games[pickOne()];
-        let tmp2 = games[pickOne()];
         let tmpGame = new Game(startingX, startingY, rocketR, points);
-        for (let j = 0; j < tmp1.movesToDo.length; j++) {
-            if (Math.random() < 0.5) {
-                tmpGame.movesToDo.push(tmp1.movesToDo[j]);
-            } else {
-                tmpGame.movesToDo.push(tmp2.movesToDo[j]);
-            }
-        }
-        tmpGame.mutate(mutationRate);
+        tmpGame.movesToDo = tmp1.movesToDo;
+        //tmpGame.mutate(mutationRate);
         newGames.push(tmpGame);
     }
     games = newGames;
@@ -30,18 +23,11 @@ function readyScore() {
     let sum = 0;
     let bestScore = -Infinity;
     for (let i = 0; i < games.length; i++) {
-        games[i].score -= Math.abs(games[i].rocket.vel.x);
-        games[i].score -= Math.abs(games[i].rocket.vel.y);
-        games[i].score -= Math.abs(games[i].rocket.dir);
-        if (Math.abs(games[i].rocket.vel.y) > 3) {
-            games[i].score -= 50;
-        }
-        if (Math.abs(games[i].rocket.vel.x) > 2) {
-            games[i].score -= 50;
-        }
-        if (Math.abs(games[i].rocket.dir) > 15) {
-            games[i].score -= 100;
-        }
+        games[i].score += 10 / (Math.abs(games[i].rocket.vel.x) + 1);
+        games[i].score += 10 / (Math.abs(games[i].rocket.vel.y) + 1);
+        games[i].score += 90 / (Math.abs(games[i].rocket.dir) + 1);
+        games[i].score += 2000 / (distSq(games[i].rocket.pos.x, games[i].rocket.pos.y, landingX, landingY) + 1);
+        games[i].score = Math.max(0, games[i].score);
         sum += games[i].score;
         if (games[i].score > bestScore) {
             bestScore = games[i].score;
@@ -65,4 +51,8 @@ function pickOne() {
     }
     index--;
     return index;
+}
+
+function distSq(x1, y1, x2, y2) {
+    return (Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
 }
