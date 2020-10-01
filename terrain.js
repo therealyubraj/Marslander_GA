@@ -18,7 +18,7 @@ class Terrain {
       return true;
     } else if (rocketY - rocketR / 2 <= 0) {
       return true;
-    } else if (rocketY - rocketR / 2 >= height) {
+    } else if (rocketY + rocketR / 2 >= height) {
       return true;
     }
     for (let i = 0; i < this.points.length - 1; i++) {

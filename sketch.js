@@ -15,50 +15,56 @@ let startingX = 600,
 
 let landingX = 600,
 	landingY = 800;
+let terrain;
+
+let testGame = new Game(startingX, startingY, rocketR);
+let landingDone = false;
 
 let games = [];
-let reachedTarget = false;
-let populationSize = 500;
-let turns = 0;
-let mutationRate = 0.01;
-let bestGame = 0;
-let stopEver = false;
+let popnSize = 500;
 let gens = 0;
-
-let testingRocket = new Rocket(400, 400, 30);
-
+let mutationRate = 0.01;
 
 function setup() {
 	frameRate(60);
 	createCanvas(900, 900);
 	background(0);
 	angleMode(DEGREES);
-	for (let i = 0; i < populationSize; i++) {
-		games.push(new Game(startingX, startingY, rocketR, points));
-		games[i].createMoveList();
+	terrain = new Terrain(points);
+
+	for (let i = 0; i < popnSize; i++) {
+		let tmpGame = new Game(startingX, startingY, rocketR);
+		tmpGame.createMoveList();
+		games.push(tmpGame);
 	}
+	//simulateOneGeneration();
 }
 
 
 function draw() {
-	if (!reachedTarget && !stopEver) {
-		for (let i = 0; i < 30; i++) {
-			ellipse(15, 15, 15, 15);
-			simulatePopulation();
-			createNewPopn();
-		}
+	background(0);
+	terrain.drawTerrain();
+
+	simulateOneGeneration();
+	if (landingDone) {
+		background(255, 0, 0);
+		console.error("--------------------------------------------------------------");
+		noLoop();
 	}
-	if (stopEver) {
-		background(0);
-		bestGame.simulateOneTurn();
-		bestGame.drawGame();
-	}
-	turns++;
 }
 
 function mousePressed() {
-	stopEver = !stopEver;
-	bestGame.dead = false;
-	bestGame.rocket = new Rocket(startingX, startingY, rocketR);
-	bestGame.turns = 0;
+	//console.error(games);
+	//simulateOneGeneration();
+}
+
+function clamp(val, min, max) {
+	let toRet = val;
+	if (toRet > max) {
+		toRet = max;
+	}
+	if (toRet < min) {
+		toRet = min;
+	}
+	return toRet;
 }

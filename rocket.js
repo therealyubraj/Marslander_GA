@@ -57,4 +57,8 @@ class Rocket {
     this.thurst.y = -scaleFac * cos(this.dir) * thurstToApply;
     this.thurst.x = scaleFac * sin(this.dir) * thurstToApply;
   }
+
+  deepCopy() {
+    return new Rocket(startingX, startingY, rocketR);
+  }
 }

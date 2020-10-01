@@ -1,41 +1,53 @@
-function simulatePopulation() {
-    for (let i = 0; i < populationSize; i++) {
-        games[i].simulateTillEnd();
-    }
-}
-
-function createNewPopn() {
+function simulateOneGeneration() {
     readyScore();
     let newGames = [];
+    games.sort((a, b) => b.score - a.score);
+
+    let bestGame = games[0];
+    let bestYVel = Math.abs(bestGame.rocket.vel.y);
+
+    //let worstGame = games[popnSize - 1];
+    //let worstYVel = Math.abs(worstGame.rocket.vel.y);
+    //console.error(bestYVel, worstYVel);
+    if (bestYVel < 5) {
+        mutationRate = 0.01;
+    } else if (bestYVel >= 5 && bestYVel < 10) {
+        mutationRate = 0.1;
+    } else {
+        mutationRate = 1;
+    }
     for (let i = 0; i < games.length; i++) {
-        let tmp1 = games[pickOne()];
-        let tmpGame = new Game(startingX, startingY, rocketR, points);
-        tmpGame.movesToDo = tmp1.movesToDo;
-        //tmpGame.mutate(mutationRate);
-        newGames.push(tmpGame);
+        let indToCopy1 = pickOne();
+        games[indToCopy1].mutate(mutationRate);
+        let tmpNewGame = new Game(startingX, startingY, rocketR);
+        for (let j = 0; j < tmpNewGame.noOfMoves; j++) {
+            let indToPush = indToCopy1;
+            let toPush = [games[indToPush].moveList[j][0], games[indToPush].moveList[j][1]];
+            tmpNewGame.moveList.push(toPush);
+        }
+        newGames.push(tmpNewGame);
     }
     games = newGames;
     gens++;
 }
 
-
 function readyScore() {
+    let velocities = [];
+    games.forEach((g) => {
+        g.simulateTillDeath();
+        g.calcFitness();
+    });
+
     let sum = 0;
-    let bestScore = -Infinity;
     for (let i = 0; i < games.length; i++) {
-        games[i].score += 10 / (Math.abs(games[i].rocket.vel.x) + 1);
-        games[i].score += 10 / (Math.abs(games[i].rocket.vel.y) + 1);
-        games[i].score += 90 / (Math.abs(games[i].rocket.dir) + 1);
-        games[i].score += 2000 / (distSq(games[i].rocket.pos.x, games[i].rocket.pos.y, landingX, landingY) + 1);
-        games[i].score = Math.max(0, games[i].score);
-        sum += games[i].score;
-        if (games[i].score > bestScore) {
-            bestScore = games[i].score;
-            bestGame = games[i];
-        }
+        sum += games[i].getScore();
+        velocities.push([games[i].rocket.vel.x, games[i].rocket.vel.y]);
     }
+    velocities.sort((a, b) => b[1] - a[1]);
+    console.error(velocities[0], velocities[popnSize - 1]);
     for (let i = 0; i < games.length; i++) {
-        games[i].score /= sum;
+        let normScore = games[i].getScore() / sum;
+        games[i].setScore(normScore);
     }
 }
 
@@ -43,16 +55,12 @@ function pickOne() {
     let index = 0;
     let r = random(1);
     while (r > 0) {
-        r -= games[index].score;
-        if (index >= populationSize - 1) {
+        r -= games[index].getScore();
+        if (index >= popnSize - 1) {
             break;
         }
         index++;
     }
     index--;
     return index;
-}
-
-function distSq(x1, y1, x2, y2) {
-    return (Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
 }

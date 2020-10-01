@@ -1,118 +1,130 @@
 class Game {
-    reachedLanding = false;
+    moveList = [];
+    noOfMoves = 200;
     dead = false;
-    turns = 0;
+    landed = false;
+    oneTurnSim = 0;
     score = 0;
-    constructor(rocketX, rocketY, rocketR, terrainPoints) {
-        this.fuel = 200;
-        this.rocket = new Rocket(rocketX, rocketY, rocketR);
-        this.terrain = new Terrain(terrainPoints);
-        this.movesToDo = [];
-    }
+    fitness = 0;
+    scoreDetails = {};
 
-    drawGame() {
-        this.terrain.drawTerrain();
-        this.rocket.drawRocket();
+    constructor(rocketX, rocketY, rocketR) {
+        this.rocket = new Rocket(rocketX, rocketY, rocketR);
     }
 
     createMoveList() {
-        let thrustRange = 5;
-        let firstForce = Math.floor(Math.random() * thrustRange);
+        let groupingMoves = 5;
         let firstAngle = Math.floor(Math.random() * 180) - 90;
-        this.movesToDo.push([firstAngle, firstForce]);
-        let lastThurstChange = 5;
-        for (let i = 1; i < this.fuel; i++) {
-            let curForce = this.movesToDo[i - 1][1];
-            if (lastThurstChange == 0) {
-                let toChange = Math.floor(Math.random() * 3) - 1;
-                //console.error(toChange);
-                curForce += toChange;
-                lastThurstChange = 6;
-            }
-            let curAngle = this.movesToDo[i - 1][1] + Math.floor(Math.random() * 30) - 15;
+        let firstForce = Math.floor(Math.random() * 5);
+        this.moveList.push([0, firstForce]);
+        for (let i = 1; i < this.noOfMoves; i++) {
+            let curForce = this.moveList[i - 1][1];
+            let curAngle = this.moveList[i - 1][0];
 
-            if (curForce > 4) {
-                curForce = 4;
-            } else if (curForce < 0) {
-                curForce = 0;
+            if (i % groupingMoves == 0) {
+                curForce = Math.floor(Math.random() * 5);
+                curAngle += Math.floor(Math.random() * 30) - 15;
             }
 
-            if (curAngle > 90) {
-                curAngle = 90;
-            } else if (curAngle < -90) {
-                curAngle = -90;
-            }
+            curForce = clamp(curForce, 0, 4);
+            curAngle = clamp(curAngle, -90, 90);
 
-
-            this.movesToDo.push([0, curForce]);
-            lastThurstChange--;
+            this.moveList.push([0, curForce]);
         }
     }
 
-    checkDeath() {
-        return this.terrain.collisionDetection(this.rocket.pos.x, this.rocket.pos.y, this.rocket.r, this.rocket.vel.x, this.rocket.vel.y, this.rocket.dir);
-    }
-
-    simulateOneTurn() {
-        if (!this.dead && !this.reachedLanding && this.turns < this.movesToDo.length) {
-            let deathVar = this.checkDeath();
-            let angle = this.movesToDo[this.turns][0];
-            let force = this.movesToDo[this.turns][1];
-            if (!deathVar) {
-                this.rocket.applyForce(force, angle);
-                this.rocket.moveRocket();
-            } else if (deathVar == 'HEHE') {
-                this.reachedLanding = true;
-                console.error("NOICE!!");
-            } else {
+    simulateTillDeath() {
+        let turns = 0;
+        while (!this.dead && turns < this.noOfMoves && !this.landed) {
+            let rocketPos = this.rocket.pos;
+            let collisionTest = terrain.collisionDetection(rocketPos.x, rocketPos.y, this.rocket.r, this.rocket.vel.x, this.rocket.vel.y, this.rocket.dir);
+            if (collisionTest == 'HEHE') {
+                this.landed = true;
+                landingDone = true;
+                this.score += 100;
+            } else if (collisionTest) {
                 this.dead = true;
             }
-            this.turns++;
+            this.rocket.applyForce(this.moveList[turns][1], this.moveList[turns][0]);
+            this.rocket.moveRocket();
+            this.score++;
+            turns++;
         }
     }
 
-    simulateTillEnd() {
-        while (!this.dead && !this.reachedLanding && this.turns < this.movesToDo.length) {
-            let deathVar = this.checkDeath();
-            let angle = this.movesToDo[this.turns][0];
-            let force = this.movesToDo[this.turns][1];
-            if (!deathVar) {
-                this.fuel -= force;
-                this.rocket.applyForce(force, angle);
-                this.rocket.moveRocket();
-                this.score++;
-            } else if (deathVar == 'HEHE') {
-                this.reachedLanding = true;
-                reachedTarget = true;
-                this.score += 100000;
-            } else {
+    simulateOneMove(drawRocket = false) {
+        if (!this.dead && this.oneTurnSim < this.noOfMoves) {
+            let rocketPos = this.rocket.pos;
+            let collisionTest = terrain.collisionDetection(rocketPos.x, rocketPos.y, this.rocket.r, this.rocket.vel.x, this.rocket.vel.y, this.rocket.dir);
+            if (collisionTest == 'HEHE') {
+                this.landed = true;
+                landingDone = true;
+            } else if (collisionTest) {
                 this.dead = true;
-                this.score -= 200;
             }
-            this.turns++;
+            this.rocket.applyForce(this.moveList[this.oneTurnSim][1], this.moveList[this.oneTurnSim][0]);
+            this.rocket.moveRocket();
+            if (drawRocket) {
+                this.drawGame();
+            }
+            this.oneTurnSim++;
         }
     }
+
+    drawGame() {
+        this.rocket.drawRocket();
+    }
+
+    setMoveList(movesToCopy) {
+        this.moveList = [];
+        for (let i = 0; i < movesToCopy.length; i++) {
+            this.moveList.push([movesToCopy[i][0], movesToCopy[i][1]]);
+        }
+    }
+
+    getScore() {
+        return this.score;
+    }
+
+    setScore(toSet) {
+        this.score = toSet;
+    }
+
+    calcFitness() {
+        let distScore = Math.floor(600 / (dist(this.rocket.pos.x, this.rocket.pos.y, landingX, landingY) + 1));
+        let scoreChange = Math.pow(distScore, 0.2);
+        this.score += scoreChange;
+        this.scoreDetails.distChanges = scoreChange;
+
+        let yVelScore = Math.floor(verticalVelLimit / (Math.abs(this.rocket.vel.y) + 1) * 100);
+        scoreChange = Math.pow(yVelScore, 6);
+        if (this.rocket.vel.y < verticalVelLimit) {
+            scoreChange *= 20;
+        }
+        this.score += scoreChange;
+        this.scoreDetails.velChanges = scoreChange;
+        this.fitness = this.score;
+    }
+
 
     mutate(MR) {
-        if (Math.random() < MR) {
-            let randInd = Math.max(0, Math.floor(Math.random() * this.movesToDo.length) - 6);
-            let curForce = this.movesToDo[randInd][1] + Math.floor(Math.random() * 3) - 1;
-            let curAngle = this.movesToDo[randInd][0] + Math.floor(Math.random() * 10) - 5;
-            if (curForce > 4) {
-                curForce = 4;
-            } else if (curForce < 0) {
-                curForce = 0;
-            }
+        for (let i = Math.floor(this.noOfMoves / 2); i < this.noOfMoves; i++) {
+            if (Math.random() < MR) {
+                let curForce = this.moveList[i][1];
+                let curAngle = this.moveList[i][0];
+                curForce += Math.floor(Math.random() * 3) - 1;
+                curAngle += Math.floor(Math.random() * 10) - 5;
 
-            if (curAngle > 90) {
-                curAngle = 90;
-            } else if (curAngle < -90) {
-                curAngle = -90;
-            }
-            for (let i = randInd; i < randInd + 5; i++) {
-                this.movesToDo[i][0] = 0;
-                this.movesToDo[i][1] = curForce;
+                curForce = clamp(curForce, 0, 4);
+                curAngle = clamp(curAngle, -90, 90);
+
+                this.moveList[i][0] = 0;
+                this.moveList[i][1] = curForce;
             }
         }
+    }
+    deepCopy() {
+        let newGame = new Game(startingX, startingY, rocketR);
+        return newGame;
     }
 }
